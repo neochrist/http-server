@@ -1,4 +1,6 @@
+from cmath import log
 import socket
+import logging
 
 
 class Server:
@@ -20,7 +22,7 @@ class Server:
         self.sock.listen(1)
         self.sock.settimeout(1.0)
         self.running = True
-        print(f"Server listening on {self.host}:{self.port}")
+        logging.info(f"Server listening on {self.host}:{self.port}")
 
     def serve(self) -> None:
         """Keeps serving."""
@@ -28,7 +30,7 @@ class Server:
             raise RuntimeError("Server must be started before serving")
         while self.running:
             try:
-                conn, _  = self.sock.accept()
+                conn, _ = self.sock.accept()
             except socket.timeout:
                 continue
             except OSError:
@@ -38,12 +40,16 @@ class Server:
 
     def handle_connection(self, conn: socket.socket) -> None:
         """Handles connection."""
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            conn.sendall(data)
-
+        try:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                conn.sendall(data)
+        except ConnectionResetError:
+            pass
+        finally:
+            conn.close()
 
     def stop(self) -> None:
         """Stops the proccess."""
